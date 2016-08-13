@@ -1,3 +1,4 @@
+'use strict';
 var alexa = require('alexa-app');
 var googleHelper = require('./google_api_helper');
 var Message = require('./message');
@@ -8,7 +9,7 @@ module.change_code = 1;
 // Define an alexa-app
 var app = new alexa.app('etherskill');
 
-app.launch(function(request, response) {
+app.launch(function (request, response) {
   response.say('Welcome to The Ether. You can check your gmail account\'s unread messages here.');
   response.card({
     type: 'Standard',
@@ -19,7 +20,7 @@ app.launch(function(request, response) {
 
 app.intent('CheckMessagesIntent', {
     utterances: ['to check my messages', 'to check my email', 'check email', 'check my email', 'check messages']
-  }, function(req, res) {
+  }, function (req, res) {
     console.log(req.sessionDetails);
 
     if (req.sessionDetails.accessToken === null) {
@@ -29,7 +30,7 @@ app.intent('CheckMessagesIntent', {
 
       googleHelper.setAccessToken(req.sessionDetails.accessToken);
       googleHelper.getEmailIDs('is:unread').then(
-        function(messages) {
+        function (messages) {
           console.log('OnSuccess', messages);
           res.session('messages', messages);
           res.session('currentIndex', 0);
@@ -37,7 +38,7 @@ app.intent('CheckMessagesIntent', {
           res.shouldEndSession(false);
           res.send();
         },
-        function(err) {
+        function (err) {
           console.log('OnError', err);
           res.say('There was an error retrieving messages from gmail.' + err);
           res.send();
@@ -51,7 +52,7 @@ app.intent('CheckMessagesIntent', {
 
 app.intent('MessageDetailsIntent', {
     utterances: ['yup', 'yes', 'message details', 'sure', 'yeah sure']
-  }, function(req, res) {
+  }, function (req, res) {
     console.log('Message Details');
     console.log('Session', req.sessionDetails);
 
@@ -76,22 +77,22 @@ app.intent('MessageDetailsIntent', {
           var message = new Message({id: messages[currentIndex]});
           var moreMessages = currentIndex < (messages.length - 1);
           message.fetch().then(
-            function() {
+            function () {
               var speech = 'Message From: ' + message.sender.replace(/(<[^>]*>)|[^a-z0-9\.@\s]/gi, '') + '. '
-                            + 'Subject: ' + message.subject + '. '
-                            + 'Say \'Read\' for the message body. '
-                            + (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '');
+                + 'Subject: ' + message.subject + '. '
+                + 'Say \'Read\' for the message body. '
+                + (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '');
               console.log('About to say', speech);
               res.session('currentMessage', message);
               res.say(speech);
               res.shouldEndSession(false);
               res.send();
             },
-            function(err) {
+            function (err) {
               res.say('There was an error retrieving messages from gmail.' + err);
               res.send();
             }
-          )
+          );
         }
 
         return false;
@@ -102,7 +103,7 @@ app.intent('MessageDetailsIntent', {
 
 app.intent('ReadMessageSnippetIntent', {
     utterances: ['read', 'body', 'more', 'again']
-  }, function(req, res) {
+  }, function (req, res) {
     console.log('Read Message Snippet');
     console.log('Session', req.sessionDetails);
 
@@ -120,8 +121,8 @@ app.intent('ReadMessageSnippetIntent', {
       } else {
         var moreMessages = currentIndex < (messages.length - 1);
         var speech = 'Message Body: ' + message.body + '. '
-                      + 'Say \'Again\' to hear this message again. '
-                      + (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '');
+          + 'Say \'Again\' to hear this message again. '
+          + (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '');
         console.log('About to say', speech);
         res.say(speech);
         res.shouldEndSession(false);
@@ -132,7 +133,7 @@ app.intent('ReadMessageSnippetIntent', {
 
 app.intent('NextMessageDetailsIntent', {
     utterances: ['next']
-  }, function(req, res) {
+  }, function (req, res) {
     console.log('Next Message Detail');
     console.log('Session', req.sessionDetails);
 
@@ -154,22 +155,22 @@ app.intent('NextMessageDetailsIntent', {
         if (currentIndex >= messages.length) {
           res.say('You have no more unread messages.');
         } else {
-          ++currentIndex;
+          currentIndex += 1;
           var message = new Message({id: messages[currentIndex]});
           var moreMessages = currentIndex < (messages.length - 1);
           message.fetch().then(
-            function() {
+            function () {
               var speech = 'Message From: ' + message.sender.replace(/(<[^>]*>)|[^a-z0-9\.@\s]/gi, '') + '. '
-                            + 'Subject: ' + message.subject + '. '
-                            + 'Say \'Read\' for the message body. '
-                            + (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '');
+                + 'Subject: ' + message.subject + '. '
+                + 'Say \'Read\' for the message body. '
+                + (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '');
               console.log('About to say', speech);
               res.session('currentMessage', message);
               res.say(speech);
               res.shouldEndSession(false);
               res.send();
             },
-            function(err) {
+            function (err) {
               res.say('There was an error retrieving messages from gmail.' + err);
               res.send();
             }
@@ -186,30 +187,30 @@ app.intent('NextMessageDetailsIntent', {
 /*
  app.intent('AMAZON.StopIntent', {
  }, function(req, res) {
-    console.log('Stop Intent');
-    console.log('Session', req.sessionDetails);
+ console.log('Stop Intent');
+ console.log('Session', req.sessionDetails);
 
-    if (req.sessionDetails.accessToken === null) {
-      res.linkAccount();
-    } else {
-      if (!req.sessionDetails.attributes.messages) {
-        res.say('Goodbye');
-      } else {
-        var currentIndex = req.sessionDetails.attributes.currentIndex || 0;
-        var messages = req.sessionDetails.attributes.messages || [];
-        var moreMessages = currentIndex < (messages.length - 1);
-        var hasCurrentMessage = !!req.sessionDetails.attributes.currentMessage;
-        res.say(
-          (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '')
-          + (hasCurrentMessage ? 'Say \'Again\' to read the current message\'s body. ' : '')
-          + (hasCurrentMessage ? 'Say \'Again\' to read the current message\'s body. ' : '')
-        );
-        res.shouldEndSession(false);
+ if (req.sessionDetails.accessToken === null) {
+ res.linkAccount();
+ } else {
+ if (!req.sessionDetails.attributes.messages) {
+ res.say('Goodbye');
+ } else {
+ var currentIndex = req.sessionDetails.attributes.currentIndex || 0;
+ var messages = req.sessionDetails.attributes.messages || [];
+ var moreMessages = currentIndex < (messages.length - 1);
+ var hasCurrentMessage = !!req.sessionDetails.attributes.currentMessage;
+ res.say(
+ (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '')
+ + (hasCurrentMessage ? 'Say \'Again\' to read the current message\'s body. ' : '')
+ + (hasCurrentMessage ? 'Say \'Again\' to read the current message\'s body. ' : '')
+ );
+ res.shouldEndSession(false);
 
 
-      }
-    }
-  }
-);
-*/
+ }
+ }
+ }
+ );
+ */
 module.exports = app;
