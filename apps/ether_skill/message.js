@@ -26,9 +26,10 @@ Message.prototype.fetch = function(id) {
       self.id = id;
     }
 
-    if (this.id) {
-      googleHelper.getMessage(this.id).then(
+    if (self.id) {
+      googleHelper.getMessage(self.id).then(
         function(message) {
+          console.log('Message.fetchSuccess', message);
           var payload = message.payload;
           var headers = payload.headers;
 
@@ -36,8 +37,8 @@ Message.prototype.fetch = function(id) {
           self.date = message.internalDate;
           self.snippet = message.snippet;
 
-          var rawBody = new Buffer(payload.body, 'base64');
-          self.body = rawBody.toString();
+          var rawBody = new Buffer(getBody(payload), 'base64');
+          self.body = rawBody.toString().substring(0, 6000);
 
           var sender = _.findWhere(headers, {name: 'From'});
           self.sender = sender ? sender.value : '';
@@ -47,6 +48,7 @@ Message.prototype.fetch = function(id) {
           resolve();
         },
         function(err) {
+          console.log('Message.fetchError', err);
           console.log('Google Helper getMessage failed. Response', err);
           reject('Google Helper getMessage failed. Response: ' + err);
         }
@@ -56,3 +58,21 @@ Message.prototype.fetch = function(id) {
     }
   });
 };
+
+function getBody(payload) {
+  console.log('Getting Body');
+  var encodedBody = '';
+  if (typeof payload.parts === 'undefined') {
+    encodedBody = payload.body.data;
+  }
+  else {
+    encodedBody = getTextPart(payload.parts);
+  }
+  return encodedBody;
+}
+
+function getTextPart(parts) {
+  console.log('Getting text part');
+  var textPart = _.findWhere(parts, {mimeType: 'text/plain'});
+  return textPart ? textPart.body.data : '';
+}

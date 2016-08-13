@@ -52,7 +52,8 @@ app.intent('CheckMessagesIntent', {
 app.intent('MessageDetailsIntent', {
     utterances: ['yup', 'yes', 'message details', 'sure', 'yeah sure']
   }, function(req, res) {
-    console.log(req.sessionDetails);
+    console.log('Message Details');
+    console.log('Session', req.sessionDetails);
 
     if (req.sessionDetails.accessToken === null) {
       res.linkAccount();
@@ -76,14 +77,14 @@ app.intent('MessageDetailsIntent', {
           var moreMessages = currentIndex < (messages.length - 1);
           message.fetch().then(
             function() {
-              res.say(
-                'Message From: ' + message.sender.replace(/(<[^>]*>)|[^a-z0-9\.@\s]/gi, '') + '. '
-                + 'Subject: ' + message.subject + '. '
-                + 'Say \'Read\' for the message body. '
-                + moreMessages ? 'Say \'Next\' to hear next messages details. ' : ''
-              );
-              res.shouldEndSession(false);
+              var speech = 'Message From: ' + message.sender.replace(/(<[^>]*>)|[^a-z0-9\.@\s]/gi, '') + '. '
+                            + 'Subject: ' + message.subject + '. '
+                            + 'Say \'Read\' for the message body. '
+                            + (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '');
+              console.log('About to say', speech);
               res.session('currentMessage', message);
+              res.say(speech);
+              res.shouldEndSession(false);
               res.send();
             },
             function(err) {
@@ -102,7 +103,8 @@ app.intent('MessageDetailsIntent', {
 app.intent('ReadMessageSnippetIntent', {
     utterances: ['read', 'body', 'more', 'again']
   }, function(req, res) {
-    console.log(req.sessionDetails);
+    console.log('Read Message Snippet');
+    console.log('Session', req.sessionDetails);
 
     if (req.sessionDetails.accessToken === null) {
       res.linkAccount();
@@ -110,18 +112,18 @@ app.intent('ReadMessageSnippetIntent', {
 
       var currentIndex = req.sessionDetails.attributes.currentIndex || 0;
       var messages = req.sessionDetails.attributes.messages || [];
-      var currentMessage = req.sessionDetails.attributes.currentMessage || null;
-      console.log('Message', currentMessage);
+      var message = req.sessionDetails.attributes.currentMessage || null;
+      console.log('Message', message);
       if (!message) {
         res.say('Sorry, but there isn\'t a message to read. Say \'Check my messages\' to check for new messages.');
         res.shouldEndSession(false);
       } else {
         var moreMessages = currentIndex < (messages.length - 1);
-        res.say(
-          'Message Body: ' + message.body + '. '
-          + 'Say \'Again\' to hear this message again. '
-          + moreMessages ? 'Say \'Next\' to hear next messages details. ' : ''
-        );
+        var speech = 'Message Body: ' + message.body + '. '
+                      + 'Say \'Again\' to hear this message again. '
+                      + (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '');
+        console.log('About to say', speech);
+        res.say(speech);
         res.shouldEndSession(false);
       }
     }
@@ -131,6 +133,9 @@ app.intent('ReadMessageSnippetIntent', {
 app.intent('NextMessageDetailsIntent', {
     utterances: ['next']
   }, function(req, res) {
+    console.log('Next Message Detail');
+    console.log('Session', req.sessionDetails);
+
     if (req.sessionDetails.accessToken === null) {
       res.linkAccount();
     } else {
@@ -154,14 +159,14 @@ app.intent('NextMessageDetailsIntent', {
           var moreMessages = currentIndex < (messages.length - 1);
           message.fetch().then(
             function() {
-              res.say(
-                'Next message from: ' + message.sender.replace(/(<[^>]*>)|[^a-z0-9\.@\s]/gi, '') + '. '
-                + 'Subject: ' + message.subject + '. '
-                + 'Say \'Read\' for the message body. '
-                + moreMessages ? 'Say \'Next\' to hear next messages details. ' : ''
-              );
-              res.shouldEndSession(false);
+              var speech = 'Message From: ' + message.sender.replace(/(<[^>]*>)|[^a-z0-9\.@\s]/gi, '') + '. '
+                            + 'Subject: ' + message.subject + '. '
+                            + 'Say \'Read\' for the message body. '
+                            + (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '');
+              console.log('About to say', speech);
               res.session('currentMessage', message);
+              res.say(speech);
+              res.shouldEndSession(false);
               res.send();
             },
             function(err) {
@@ -177,4 +182,34 @@ app.intent('NextMessageDetailsIntent', {
     }
   }
 );
+
+/*
+ app.intent('AMAZON.StopIntent', {
+ }, function(req, res) {
+    console.log('Stop Intent');
+    console.log('Session', req.sessionDetails);
+
+    if (req.sessionDetails.accessToken === null) {
+      res.linkAccount();
+    } else {
+      if (!req.sessionDetails.attributes.messages) {
+        res.say('Goodbye');
+      } else {
+        var currentIndex = req.sessionDetails.attributes.currentIndex || 0;
+        var messages = req.sessionDetails.attributes.messages || [];
+        var moreMessages = currentIndex < (messages.length - 1);
+        var hasCurrentMessage = !!req.sessionDetails.attributes.currentMessage;
+        res.say(
+          (moreMessages ? 'Say \'Next\' to hear next messages details. ' : '')
+          + (hasCurrentMessage ? 'Say \'Again\' to read the current message\'s body. ' : '')
+          + (hasCurrentMessage ? 'Say \'Again\' to read the current message\'s body. ' : '')
+        );
+        res.shouldEndSession(false);
+
+
+      }
+    }
+  }
+);
+*/
 module.exports = app;
