@@ -1,0 +1,7 @@
+{
+  "name": "application-name",
+  "version": "0.0.1",
+  "dependencies": {
+    "alexa-app-server": "^2.2.4"
+  }
+}
