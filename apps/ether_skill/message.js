@@ -2,6 +2,13 @@ var _ = require('underscore');
 var googleHelper = require('./google_api_helper');
 
 module.exports = Message;
+
+/**
+ * Constructor for Message objects
+ *
+ * @param {object} options
+ * @constructor
+ */
 function Message(options) {
   options = options || {};
 
@@ -15,8 +22,9 @@ function Message(options) {
 }
 
 /**
+ * Fetch the data from the API helper
  *
- * @param id
+ * @param {number} [id] ID of the message to retrieve. Will override internal id if already set
  * @returns {Promise}
  */
 Message.prototype.fetch = function(id) {
@@ -37,6 +45,7 @@ Message.prototype.fetch = function(id) {
           self.date = message.internalDate;
           self.snippet = message.snippet;
 
+          // Alexa ssml is limited to 8000 characters - trim here to 6000 just to be safe
           var rawBody = new Buffer(getBody(payload), 'base64');
           self.body = rawBody.toString().substring(0, 6000);
 
@@ -59,6 +68,13 @@ Message.prototype.fetch = function(id) {
   });
 };
 
+/**
+ * Return the Base64 encoded version of the body text. This is required because of the inconsistent way in which
+ * multipart emails store the body
+ *
+ * @param {Object} payload The message payload
+ * @returns {string}
+ */
 function getBody(payload) {
   console.log('Getting Body');
   var encodedBody = '';
@@ -71,6 +87,12 @@ function getBody(payload) {
   return encodedBody;
 }
 
+/**
+ * Get the text portion of the body for multipart emails
+ *
+ * @param {[]} parts The multiple parts of the message payload
+ * @returns {string}
+ */
 function getTextPart(parts) {
   console.log('Getting text part');
   var textPart = _.findWhere(parts, {mimeType: 'text/plain'});
